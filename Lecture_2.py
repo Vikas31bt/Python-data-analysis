@@ -8,7 +8,7 @@ print(Name + '\n' + 'started in ' +str(Start_HGP) + ' and was completed in ' + s
 print(type(Start_HGP))
 Start_HGP = str(Start_HGP)
 print(type(Start_HGP))
-End_HGP = int(input('HGP was completed in which year: '))
+End_HGP = int(input('Human Genome Project was completed in which year: '))
 print(type(End_HGP))
 
 g = '9.8'
