@@ -5,8 +5,8 @@ print('Working with variables and datatypes')
 number = 10
 print(number, type(number))
 
-glass = 'milk'
-print(glass, type(glass))
+genome = 'Set of genes'
+print(genome, type(genome))
 
 pi = 3.14
 print(pi, type(pi))
