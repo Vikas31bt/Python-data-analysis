@@ -1,76 +1,78 @@
-
-# Download VCF file
-wget -O Chr17_sites.vcf "https://storage.googleapis.com/gcp-public-data--gnomad/release/4.0/vcf/genomes/gnomad.genomes.v4.0.sites.chr17.vcf.bgz"
-# Download TBI file
-wget -O Chr17_sites.vcf.tbi "https://storage.googleapis.com/gcp-public-data--gnomad/release/4.0/vcf/genomes/gnomad.genomes.v4.0.sites.chr17.vcf.bgz.tbi"
-# Check MD5 for VCF file
-md5sum chr17_sites.vcf
-
-# Check MD5 for TBI file
-md5sum chr17_sites.vcf.tbi
-
-# Download Chromosome 17
-wget -O chr17.fasta "https://www.ncbi.nlm.nih.gov/sviewer/viewer.fcgi?id=NC_000017.11&db=nuccore&report=fasta&extrafeat=976&fmt_mask=0&maxplex=1&toolbar=0&extrafeatfeats=976&log%24=seqview&tracklabel=Chr17&search=&filenum=1"
-
-
+[Yesterday 10:42 PM] Vikas Kaushik
+# Import necessary modules
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio import SeqIO
 import vcf
-
-def extract_variants_in_interval(vcf_file, genome_fasta, genomic_interval, output_file):
+ 
+# Open VCF file
+vcf_file_path = "path/Variant_file.vcf"
+vcf_reader = vcf.Reader(filename=vcf_file_path)
+ 
+# Filter variants based on quality (QUAL) threshold
+filtered_variants = [record for record in vcf_reader if record.QUAL is not None and record.QUAL >= 20]
+ 
+# Print details of the first 5 variants
+for variant in filtered_variants[:5]:
+    print("Chromosome: {}, Position: {}, ID: {}, Ref: {}, Alt: {}, Quality: {}".format(
+        variant.CHROM, variant.POS, variant.ID, variant.REF, variant.ALT, variant.QUAL))
+ 
+# Reference fasta file path
+ref_fasta_path = "path/reference_sequence.fasta"
+genome = SeqIO.read(ref_fasta_path, "fasta")
+ref_sequence = str(genome.seq)
+ 
+# Open and read the first few lines of the reference fasta file
+with open(ref_sequence, "r") as ref_file:
+    for _ in range(5):  # Print the first 5 lines
+        print(ref_file.readline().strip())
+ 
+ 
+# Define function to extract sequence based on variant
+def extract_sequence(ref_sequence, variant_position, variant_sequence):
     """
-    Extract variants within a specified genomic interval for a given individual.
-
-    Args:
-    - vcf_file (str): Input VCF file.
-    - genome_fasta (str): Reference genome FASTA file.
-    - genomic_interval (str): Genomic interval in the format "chromosome:start-end".
-    - output_file (str): Output file for the generated sequence.
-
+    Extracts the individualized sequence based on a genetic variant.
+ 
+    Parameters:
+    - ref_sequence: Original reference DNA sequence.
+    - variant_position: Position of the genetic variant.
+    - variant_sequence: Alternative sequence introduced by the genetic variant.
+ 
     Returns:
-    - None
+    - Individualized DNA sequence.
     """
-    # Open the VCF file for reading
-    vcf_reader = vcf.Reader(filename=vcf_file)
-
-    # Extract variants within the specified genomic interval
-    variants_in_interval = [record for record in vcf_reader if genomic_interval == f"{record.CHROM}:{record.POS}-{record.POS + len(record.ALT[0]) - 1}"]
-
-    # Create a dictionary to store alternate alleles for each position
-    variants_dict = {record.POS: record.ALT[0] for record in variants_in_interval}
-
-    # Open the reference genome FASTA file for reading
-    with open(genome_fasta, 'r') as fasta_file:
-        # Extract the sequence within the genomic interval
-        sequence = ""
-        for line in fasta_file:
-            if line.startswith(">"):
-                continue
-            sequence += line.strip()
-
-    # Generate the sequence with alternate alleles for variant positions
-    for variant_position, alternate_allele in variants_dict.items():
-        position = variant_position - 1
-        sequence = sequence[:position] + str(alternate_allele) + sequence[position + len(alternate_allele):]
-
-    # Write the generated sequence to the output file
-    with open(output_file, 'w') as output:
-        output.write(f">{genomic_interval}\n")
-        output.write(sequence)
-
-def main():
-    # Input VCF file
-    vcf_file = "Chr17_sites.vcf"
-
-    # Reference genome FASTA file
-    genome_fasta = "reference_genome.fasta"
-
-    # Genomic interval in the format "chromosome:start-end"
-    genomic_interval = "chr17:1000000-2000000"
-
-    # Output file for the generated sequence
-    output_file = "reconstructed_sequence.fasta"
-
-    # Extract variants within the specified genomic interval and generate the sequence
-    extract_variants_in_interval(vcf_file, genome_fasta, genomic_interval, output_file)
-
-if __name__ == "__main__":
-    main()
+    return ref_sequence[:variant_position - 1] + variant_sequence + ref_sequence[variant_position + len(variant_sequence):]
+# ref_sequence[:variant_position - 1]: This part extracts the portion of the reference sequence from the beginning up to (but not including) the position of the genetic variant.
+# variant_sequence: This part adds the alternative sequence introduced by the genetic variant.
+# ref_sequence[variant_position + len(variant_sequence):]: This part extracts the portion of the reference sequence from the position after the genetic variant to the end.
+ 
+# Initialize list to store individualized sequences
+individualized_sequences = []
+ 
+# Process each variant and create individualized sequences
+for variant in filtered_variants:
+    variant_position = variant.POS
+    if variant.ALT:
+        variant_sequence = str(variant.ALT[0])
+        ind_sequence = extract_sequence(ref_sequence, variant_position, variant_sequence)
+        individualized_sequences.append(ind_sequence)
+        print("Variant: {}, Variant Position: {}, Variant Sequence: {}, Individualized Sequence: {}".format(
+            variant, variant_position, variant_sequence, ind_sequence))
+    else:
+        print("Skipping variant {} due to missing ALT information.".format(variant))
+ 
+ 
+# Initialize individualized sequence with the original reference sequence
+individualized_sequence = ref_sequence
+ 
+# Iterate over filtered variants and modify the individualized sequence
+for variant in filtered_variants:
+    variant_position = variant.POS
+    if variant.ALT:
+        variant_sequence = str(variant.ALT[0])
+        individualized_sequence = extract_sequence(individualized_sequence, variant_position, variant_sequence)
+    else:
+        print("Skipping variant {} due to missing ALT information.".format(variant))
+ 
+# Print the final individualized sequence
+print("Final Individualized Sequence:", individualized_sequence)
