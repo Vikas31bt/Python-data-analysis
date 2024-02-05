@@ -5,7 +5,7 @@ from Bio import SeqIO
 import vcf
  
 # Open VCF file
-vcf_file_path = "/mnt/c/Users/vikas/Desktop/CCM_Sickids/Variant_file.vcf"
+vcf_file_path = "path/Variant_file.vcf"
 vcf_reader = vcf.Reader(filename=vcf_file_path)
  
 # Filter variants based on quality (QUAL) threshold
@@ -17,7 +17,7 @@ for variant in filtered_variants[:5]:
         variant.CHROM, variant.POS, variant.ID, variant.REF, variant.ALT, variant.QUAL))
  
 # Reference fasta file path
-ref_fasta_path = "/mnt/c/Users/vikas/Desktop/CCM_Sickids/reference_sequence.fasta"
+ref_fasta_path = "path/reference_sequence.fasta"
 genome = SeqIO.read(ref_fasta_path, "fasta")
 ref_sequence = str(genome.seq)
  
